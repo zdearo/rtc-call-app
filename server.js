@@ -15,6 +15,10 @@ function updateConnectedUsers() {
   io.emit('connected_users', connected_users);
 }
 
+function updateDisconnections(user) {
+  io.emit('disconnected_user', user);
+}
+
 // Evento de conexão de um novo usuário
 io.on('connection', (socket) => {
   console.log('Usuário conectado: ' + socket.id);
@@ -24,6 +28,7 @@ io.on('connection', (socket) => {
   // Escuta por ofertas (offer) e envia para o destinatário correto
   socket.on('offer', (user, description) => {
     console.log('Oferta recebida de ' + socket.id + ' para ' + user);
+    io.to(user).emit('call', socket.id);
     io.to(user).emit('offer', socket.id, description);
   });
 
@@ -44,6 +49,7 @@ io.on('connection', (socket) => {
     console.log('Usuário desconectado: ' + socket.id);
     connected_users = connected_users.filter(user => user !== socket.id);
     updateConnectedUsers();
+    updateDisconnections(socket.id);
   });
 });
 

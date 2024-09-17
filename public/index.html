@@ -7,17 +7,19 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <section id="videos-container">
-  </section>
+  <main>
+    <h1>WebRTC Video Call</h1>
+    <section id="videos-container">
+    </section>
+  
+    <section id="content">
+      <label for="users">Connected Users</label>
+      <ul id="users"></ul>
+    </section>
+  </main>
 
-  <section id="content">
-    <label for="users">Connected Users</label>
-    <ul id="users"></ul>
-    <label for="status">Status</label>
-    <p id="status"></p>
-  </section>
-
+  <script src="js/modal.js"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
+  <script src="js/script.js"></script>
 </body>
 </html>

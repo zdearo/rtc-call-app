@@ -20,38 +20,24 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: false })
     video.play();
   }).catch(console.error);
 
-// Função para criar uma conexão peer com outro usuário
-function createPeerConnection(user) {
-  peerConnection = new RTCPeerConnection(config);
-  
-  // Adiciona os tracks locais de audio e video ao peerConnection
-  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-  
-  // Enviar candidatos ICE ao outro peer
-  peerConnection.onicecandidate = event => {
-    if (event.candidate) {
-      socket.emit('ice-candidate', user, event.candidate);
+// Evento disparado quando um novo usuário se conecta
+socket.on('connected_users', (users) => {
+  usersList.innerHTML = '';
+  users.forEach(user => {
+    if (user !== socket.id) {
+      createListItem(user);
     }
-  };
+  });
 
-  // Quando o stream remoto é adicionado, ele é exibido
-  peerConnection.ontrack = event => {
-    const video = document.createElement('video');
-    const videosContainer = document.getElementById('videos-container');
-    video.srcObject = event.streams[0];
-    video.play();
-    videosContainer.appendChild(video);
-  };
-}
+});
 
-// Função para iniciar a conexão e enviar a oferta
-function createOffer(user) {
-  peerConnection.createOffer()
-    .then(offer => peerConnection.setLocalDescription(offer))
-    .then(() => {
-      socket.emit('offer', user, peerConnection.localDescription);
-    }).catch(console.error);
-}
+// Evento disparado quando um usuário se desconecta
+socket.on('disconnected_user', (user) => {
+  const video = document.querySelector(`[data-socket="${user}"]`);
+  if (video) {
+    video.remove();
+  }
+});
 
 // Função para criar um item de lista de usuários
 function createListItem(user) {
@@ -68,15 +54,39 @@ function createListItem(user) {
   usersList.appendChild(li);
 }
 
-// Evento disparado quando um novo usuário se conecta
-socket.on('connected_users', (users) => {
-  usersList.innerHTML = '';
-  users.forEach(user => {
-    if (user !== socket.id) {
-      createListItem(user);
+// Função para criar uma conexão peer com outro usuário
+function createPeerConnection(user) {
+  peerConnection = new RTCPeerConnection(config);
+  
+  // Adiciona os tracks locais de audio e video ao peerConnection
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  
+  // Enviar candidatos ICE ao outro peer
+  peerConnection.onicecandidate = event => {
+    if (event.candidate) {
+      socket.emit('ice-candidate', user, event.candidate);
     }
-  });
-});
+  };
+  
+  // Quando o stream remoto é adicionado, ele é exibido
+  peerConnection.ontrack = event => {
+    const video = document.createElement('video');
+    video.setAttribute('data-socket', user);
+    const videosContainer = document.getElementById('videos-container');
+    video.srcObject = event.streams[0];
+    video.play();
+    videosContainer.appendChild(video);
+  };
+}
+
+// Função para iniciar a conexão e enviar a oferta
+function createOffer(user) {
+  peerConnection.createOffer()
+    .then(offer => peerConnection.setLocalDescription(offer))
+    .then(() => {
+      socket.emit('offer', user, peerConnection.localDescription);
+    }).catch(console.error);
+}
 
 // Quando uma oferta é recebida de outro peer
 socket.on('offer', (user, description) => {
@@ -91,6 +101,10 @@ socket.on('offer', (user, description) => {
     .then(() => {
       socket.emit('answer', user, peerConnection.localDescription);
     }).catch(console.error);
+});
+
+socket.on('call', (user) => {
+  alert('Recebendo chamada de ' + user);
 });
 
 // Quando uma resposta (answer) é recebida do peer
